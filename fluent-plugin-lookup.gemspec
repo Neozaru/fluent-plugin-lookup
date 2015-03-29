@@ -3,8 +3,8 @@ Gem::Specification.new do |spec|
   spec.version       = "0.0.1"
   spec.authors       = ["Neozaru"]
   spec.email         = ["neozaru@mailoo.org"]
-  spec.description   = %q{Fluentd custom plugin to fields values to other values from lookup table file}
-  spec.summary       = %q{Fluentd custom plugin to fields values to other values from lookup table file}
+  spec.description   = %q{Fluentd custom plugin to replace fields values using lookup table file}
+  spec.summary       = %q{Fluentd custom plugin to replace fields values using lookup table file}
   spec.homepage      = "https://github.com/Neozaru/fluent-plugin-lookup.git"
   spec.license       = "WTFPL"
 
