@@ -14,7 +14,7 @@ How
 You basically want to define :
 - Input field : **field**.
 - Output field : **output_field** (omitting this parameter will replace *input* field value).
-- Lookup table CSV file : **CSV file** (two columns per row, separated by a comma).
+- Lookup table CSV file : **table_file** (two columns per row, separated by a comma).
 - Sanity check, raises error if empty, malformed file or duplicates entries inside the file : **strict** (omitting this parameter will default to *false*).
 
 Use this filter multiple times if you need to repalce multiple fields.
@@ -23,7 +23,6 @@ Examples
 ========
 
 This is our *lookup.csv* file :
-```
 
 ```
 value,other_value
@@ -36,6 +35,7 @@ two,2
 Example 1
 ---------
 
+```
 <match *.test>
     type lookup
     add_tag_prefix lookup.
@@ -64,6 +64,7 @@ Example of records :
 Example 2
 ---------
 
+```
 <match *.test>
     type lookup
     add_tag_prefix lookup.
