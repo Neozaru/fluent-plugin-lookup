@@ -87,5 +87,35 @@ Example of records :
     'foo' => "bar"
 }
 ```
+Example 3
+---------
+
+```
+<match *.test>
+    type lookup
+    add_tag_prefix lookup.
+    table_file /usr/share/my/lookup.csv
+    field nested.key1
+</match>
+```
+
+Example of records :
+```
+{
+    'nested' => {
+        'key1' => "nicolas",
+    },
+    'foo' => "bar"
+}
+```
+... will output :
+```
+{
+    'nested' => {
+        'key1' => "cage",
+    },
+    'foo' => "bar"
+}
+```
 
 Since *output_field* is not defined, the input *field* value is replaced.
