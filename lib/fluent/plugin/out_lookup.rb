@@ -58,8 +58,18 @@ module Fluent
       end
 
       @lookup_table = create_lookup_table(table_file)
-      @field = field
-      @output_field = output_field || field
+      @field = field.split(".")
+
+      if (output_field.nil?)
+        @filter_method = method(:filter_no_output)
+      else
+        @output_field = output_field.split(".")
+        @filter_method = method(:filter_with_output)
+      end
+
+      @assign_method = method(:assign)
+      @assign_self_method = method(:assign_self)
+      @return_method = method(:return)
 
     end
 
@@ -75,12 +85,56 @@ module Fluent
 
     private
 
+    def assign_self(record, key, value)
+      assign(record, key, record[key])
+    end
+
+    def assign(record, key, value)
+      record[key] = process(value) || value
+    end
+
+    def return(record, key, value) 
+      return record[key]
+    end
+
+
     def filter_record(tag, time, record)
       super(tag, time, record)
-      if (not record.has_key?(@field))
-        return
+      @filter_method.call(record)
+    end
+
+    # Same input/output : Get and set (dig once)
+    def filter_no_output(record)
+      dig_cb(record, @field, nil, false, @assign_self_method)
+    end
+
+    # Different input/output : Get, then set (dig twice)
+    def filter_with_output(record)
+      value = dig_cb(record, @field, nil, false, @return_method)
+      if (!value.nil?)
+        dig_cb(record, @output_field, value, true, @assign_method)
       end
-      record[@output_field] = process(record[@field]) || record[@field]
+    end
+
+    # Generic function to dig into map. 
+    def dig_cb(record, path, value, alter, cb)
+      digged_record = record
+      path.each_with_index {|key, index|
+        # If enabled, creates new path in the record
+        if (!digged_record.has_key?(key))
+          if (!alter) 
+            return nil
+          end
+          digged_record[key] = {}
+        end
+
+        if (index == path.length - 1)
+          return cb.call(digged_record, key, value)
+        else
+          digged_record = digged_record[key]
+        end
+      }
+      return nil
     end
 
     def process(value)

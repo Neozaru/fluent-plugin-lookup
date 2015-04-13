@@ -33,8 +33,7 @@ class LookupOutputTest < Test::Unit::TestCase
     ])
 
     assert_equal 'lookup.', d.instance.add_tag_prefix
-    assert_equal 'key1',    d.instance.field
-    assert_equal 'key2', d.instance.output_field
+    assert_equal ['key1'],    d.instance.field
     assert_equal true, d.instance.strict
     assert_equal @correct_file, d.instance.table_file
 
@@ -48,8 +47,7 @@ class LookupOutputTest < Test::Unit::TestCase
     ])
 
     assert_equal 'lookup.', d.instance.add_tag_prefix
-    assert_equal 'key1',    d.instance.field
-    assert_equal 'key2', d.instance.output_field
+    assert_equal ['key1'],    d.instance.field
     assert_equal false, d.instance.strict
     assert_equal @correct_file, d.instance.table_file
 
@@ -63,8 +61,7 @@ class LookupOutputTest < Test::Unit::TestCase
     ])
 
     assert_equal 'lookup.', d.instance.add_tag_prefix
-    assert_equal 'key1',    d.instance.field
-    assert_equal 'key1', d.instance.output_field
+    assert_equal ['key1'],    d.instance.field
     assert_equal true, d.instance.strict
     assert_equal @correct_file, d.instance.table_file
 
@@ -79,8 +76,7 @@ class LookupOutputTest < Test::Unit::TestCase
     ])
 
     assert_equal 'lookup.', d.instance.add_tag_prefix
-    assert_equal 'key1',    d.instance.field
-    assert_equal 'key2', d.instance.output_field
+    assert_equal ['key1'],    d.instance.field
     assert_equal false, d.instance.strict
     assert_equal @duplicates_file, d.instance.table_file
 
@@ -95,8 +91,7 @@ class LookupOutputTest < Test::Unit::TestCase
     ])
 
     assert_equal 'lookup.', d.instance.add_tag_prefix
-    assert_equal 'key1',    d.instance.field
-    assert_equal 'key2', d.instance.output_field
+    assert_equal ['key1'],    d.instance.field
     assert_equal false, d.instance.strict
     assert_equal @empty_file, d.instance.table_file
 
@@ -350,6 +345,96 @@ class LookupOutputTest < Test::Unit::TestCase
     assert_equal 1,           emits.count
     assert_equal 'lookup.test', emits[0][0]
     assert_equal 'cage', emits[0][2]['key1']
+  end
+
+
+
+  def test_emit_nested_without_output_field
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field nested.key1
+    ])
+
+    record = {
+      'nested' => {
+        'key1' => "nicolas",
+      },
+      'foo' => "bar"
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal 'cage', emits[0][2]['nested']['key1']
+  end
+
+
+  def test_emit_nested_with_non_existing_output_field
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field nested.key1
+      output_field new.foo
+    ])
+
+    record = {
+      'nested' => {
+        'key1' => "nicolas",
+      },
+      'foo' => "bar"
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal 'cage', emits[0][2]['new']['foo']
+  end
+
+  # Checks that the record is not modified if the input_field is not found
+  def test_emit_nested_with_non_existing_input_field
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field nested.key1
+      output_field new.foo
+    ])
+
+    record = {
+      'foo' => "bar"
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal nil, emits[0][2]['nested']
+    assert_equal nil, emits[0][2]['new']
+  end
+
+  # Checks that the record is not modified if the input_field is not found
+  def test_emit_nested_with_non_existing_input_field_no_output
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field nested.key1
+    ])
+
+    record = {
+      'foo' => "bar"
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal nil, emits[0][2]['nested']
   end
 
   def test_emit_without_output_field_no_correspondance
