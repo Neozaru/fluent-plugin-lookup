@@ -415,6 +415,39 @@ class LookupOutputTest < Test::Unit::TestCase
     assert_equal 'lookup.test', emits[0][0]
     assert_equal nil, emits[0][2]['nested']
     assert_equal nil, emits[0][2]['new']
+    assert_equal 'bar', emits[0][2]['foo']
+  end
+
+  # Checks that the record is not modified if the input_field is not found
+  def test_emit_nested_with_partial_output_structure
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field nested.key1
+      output_field new.foo
+    ])
+
+    record = {
+      'foo' => "bar",
+      'nested' => {
+        'key1' => "nicolas",
+      },
+      'new' => {
+        'field1' => "value1",
+        'field2' => "value2"
+      }
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal 'nicolas', emits[0][2]['nested']['key1']
+    assert_equal 'cage', emits[0][2]['new']['foo']
+    assert_equal 'value1', emits[0][2]['new']['field1']
+    assert_equal 'value2', emits[0][2]['new']['field2']
+
   end
 
   # Checks that the record is not modified if the input_field is not found
