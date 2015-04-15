@@ -490,4 +490,90 @@ class LookupOutputTest < Test::Unit::TestCase
     assert_equal 'myvalue', emits[0][2]['key1']
   end
 
+  def test_emit_rename_key
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field nicolas
+      rename_key true
+    ])
+
+    record = {
+      'nicolas' => "bar"
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal 'bar', emits[0][2]['cage']
+    assert_equal nil, emits[0][2]['nicolas']
+  end
+
+  def test_emit_rename_key_erase
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field nicolas
+      rename_key true
+    ])
+
+    record = {
+      'nicolas' => "bar",
+      'cage' => "foo"
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal 'bar', emits[0][2]['cage']
+    assert_equal nil, emits[0][2]['nicolas']
+  end
+
+  def test_emit_rename_key_nested
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field nested.nicolas
+      rename_key true
+    ])
+
+    record = {
+      'nested' => {
+        'nicolas' => "bar",
+      }
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal 'bar', emits[0][2]['nested']['cage']
+    assert_equal nil, emits[0][2]['nested']['nicolas']
+  end
+
+  def test_emit_rename_key_not_existing
+    d = create_driver(%[
+      add_tag_prefix lookup.
+      table_file #{@correct_file}
+      field dummy
+      rename_key true
+    ])
+
+    record = {
+      'nicolas' => "bar"
+    }
+
+    d.run { d.emit(record) }
+    emits = d.emits
+
+    assert_equal 1,           emits.count
+    assert_equal 'lookup.test', emits[0][0]
+    assert_equal 'bar', emits[0][2]['nicolas']
+  end
+
 end

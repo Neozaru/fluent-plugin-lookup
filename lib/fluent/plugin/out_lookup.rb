@@ -11,6 +11,7 @@ module Fluent
     config_param :field, :string, :default => nil
     config_param :output_field, :string, :default => nil
     config_param :strict, :bool, :default => false
+    config_param :rename_key, :bool, :default => false
 
     def handle_row(lookup_table, row)
       if (row.length < 2)
@@ -53,12 +54,22 @@ module Fluent
     def configure(conf)
       super
 
+      @assign_method = method(:assign)
+      @assign_self_method = method(:assign_self)
+      @return_method = method(:return)
+      @rename_method = method(:rename)
+
       if (field.nil? || table_file.nil?) 
         raise ConfigError, "lookup: Both 'field', and 'table_file' are required to be set."
       end
 
       @lookup_table = create_lookup_table(table_file)
       @field = field.split(".")
+
+      if (rename_key)
+        @filter_method = method(:filter_rename_key)
+        return
+      end
 
       if (output_field.nil?)
         @filter_method = method(:filter_no_output)
@@ -67,9 +78,6 @@ module Fluent
         @filter_method = method(:filter_with_output)
       end
 
-      @assign_method = method(:assign)
-      @assign_self_method = method(:assign_self)
-      @return_method = method(:return)
 
     end
 
@@ -93,10 +101,17 @@ module Fluent
       record[key] = process(value) || value
     end
 
-    def return(record, key, value) 
+    def return(record, key, value_nouse) 
       return record[key]
     end
 
+    def rename(record, key, value_nouse)
+      new_key = process(key) || return
+      field_value = record[key]
+      record.delete(key)
+      record[new_key] = field_value
+    end
+    
 
     def filter_record(tag, time, record)
       super(tag, time, record)
@@ -114,6 +129,11 @@ module Fluent
       if (!value.nil?)
         dig_cb(record, @output_field, value, true, @assign_method)
       end
+    end
+
+    # Rename key (will NOT copy or move the field, just rename the key)
+    def filter_rename_key(record)
+      value = dig_cb(record, @field, nil, false, @rename_method)
     end
 
     # Generic function to dig into map. 

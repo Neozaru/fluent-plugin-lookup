@@ -118,4 +118,32 @@ Example of records :
 }
 ```
 
-Since *output_field* is not defined, the input *field* value is replaced.
+Example 4
+---------
+
+Renaming key
+
+```
+<match *.test>
+    type lookup
+    add_tag_prefix lookup.
+    table_file /usr/share/my/lookup.csv
+    field key1
+    rename_key true
+</match>
+```
+
+Example of records :
+```
+{
+    'input' => "nicolas",
+    'foo' => "bar"
+}
+```
+... will output :
+```
+{
+    'output' => "nicolas",
+    'foo' => "bar"
+}
+
